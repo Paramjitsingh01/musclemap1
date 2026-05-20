@@ -201,7 +201,7 @@ elif menu == "AI Meal Scanner":
 
                         Estimate the following professionally:
 
-                        1. Name of food items
+                        1. Food item NAME
                         2. calories in DIGIT
                         3. Protein in DIGIT
                         4. Carbohydrates in DIGIT
