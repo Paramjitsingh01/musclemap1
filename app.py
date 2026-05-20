@@ -86,6 +86,7 @@ html, body, [class*="css"] {
     border-radius: 25px;
     border: 1px solid rgba(255,255,255,0.08);
     line-height: 1.8;
+    font-size: 17px;
 }
 
 </style>
@@ -162,10 +163,10 @@ elif menu == "AI Meal Scanner":
 
         try:
 
-            # Convert image properly
+            # FIX RGBA ERROR
             image = Image.open(uploaded_file).convert("RGB")
 
-            col1, col2 = st.columns([1,1])
+            col1, col2 = st.columns([1, 1])
 
             with col1:
 
@@ -195,51 +196,39 @@ elif menu == "AI Meal Scanner":
                         buffered = io.BytesIO()
                         image.save(buffered, format="JPEG")
 
-                        # AI Prompt
+                        # AI PROMPT
                         prompt = """
-You are an AI nutrition expert.
+                        You are an AI nutrition expert.
 
-Analyze the uploaded meal image carefully and estimate the food items and nutrition values.
+                        Analyze the uploaded meal image carefully and estimate the food items and nutrition values.
 
-IMPORTANT:
-- Keep the response short, clean, and professional.
-- Use simple formatting exactly like below.
-- Give approximate values only.
-- Do not explain too much.
+                        IMPORTANT:
+                        - Keep the response short, clean, and professional.
+                        - Give approximate values only.
+                        - Do not explain too much.
 
-Response Format:
+                        Response Format:
 
-🍕 Food Name:
-Pizza, Fries, Cold Drink
+                        🍕 Food Name:
+                        Pizza, Fries, Cold Drink
 
-🥩 Protein:
-10 gm
+                        🥩 Protein:
+                        10 gm
 
-🍞 Carbohydrates:
-45 gm
+                        🍞 Carbohydrates:
+                        45 gm
 
-🧈 Fat:
-15 gm
+                        🧈 Fat:
+                        15 gm
 
-🔥 Calories:
-550 kcal
+                        🔥 Calories:
+                        550 kcal
 
-❤️ Healthy or Unhealthy:
-This meal is high in calories and fats.
-Eating it occasionally is fine, but avoid frequent consumption.
+                        ❤️ Healthy or Unhealthy:
+                        This meal is high in calories and fats.
+                        Eating it occasionally is fine, but avoid frequent consumption.
 
-Only follow this format.
-"""
-                        
-
-                        1. Food item NAME
-                        2. calories in " "gm
-                        3. Protein in " "gm
-                        4. Carbohydrates in " "gm
-                        5. Fat in " "gm
-                        6. Healthy or unhealthy 2 Lines
-
-                        Format output beautifully.
+                        Only follow this format.
                         """
 
                         try:
@@ -253,7 +242,7 @@ Only follow this format.
                                     }
                                 ],
                                 temperature=0.5,
-                                max_tokens=500
+                                max_tokens=400
                             )
 
                             result = response.choices[0].message.content
