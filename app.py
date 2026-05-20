@@ -1,5 +1,4 @@
 # ================= IMPORTS ================= #
-# ================= IMPORTS ================= #
 import streamlit as st
 from PIL import Image
 import google.generativeai as genai
@@ -13,13 +12,11 @@ st.set_page_config(
 )
 
 # ================= GEMINI API ================= #
-# ================= GEMINI API ================= #
-response = model.generate_content([
-    prompt,
-    Image.open(uploaded_file)
-])
+GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 
-st.write(response.text)
+genai.configure(api_key=GEMINI_API_KEY)
+
+model = genai.GenerativeModel("gemini-1.5-pro")
 
 # ================= CUSTOM CSS ================= #
 st.markdown("""
@@ -31,10 +28,6 @@ html, body, [class*="css"] {
     font-family: 'Poppins', sans-serif;
     background-color: #0E1117;
     color: white;
-}
-
-.main {
-    background-color: #0E1117;
 }
 
 .title {
@@ -148,10 +141,10 @@ elif menu == "AI Meal Scanner":
 
     uploaded_file = st.file_uploader(
         "Upload Meal Image",
-        type=["jpg", "png", "jpeg"]
+        type=["jpg", "jpeg", "png"]
     )
 
-    if uploaded_file:
+    if uploaded_file is not None:
 
         image = Image.open(uploaded_file)
 
@@ -172,7 +165,6 @@ elif menu == "AI Meal Scanner":
                     time.sleep(0.01)
                     progress.progress(i + 1)
 
-                # ================= GEMINI AI ================= #
                 prompt = """
                 Analyze this food image.
 
@@ -188,12 +180,9 @@ elif menu == "AI Meal Scanner":
                 """
 
                 response = model.generate_content([
-                 prompt,
-                   Image.open(uploaded_file)
+                    prompt,
+                    image
                 ])
-
-                
-                )
 
                 st.success("AI Scan Complete")
 
@@ -258,7 +247,6 @@ elif menu == "BMI Calculator":
 
             bmi = weight / ((height / 100) ** 2)
 
-            # ================= BMI CATEGORY ================= #
             if bmi < 18.5:
                 category = "Underweight"
                 color = "orange"
@@ -278,13 +266,8 @@ elif menu == "BMI Calculator":
             st.markdown('<div class="result-card">', unsafe_allow_html=True)
 
             st.markdown(f"""
-            <h1>
-                BMI = {bmi:.1f} kg/m²
-            </h1>
-
-            <h2 style="color:{color};">
-                {category}
-            </h2>
+            <h1>BMI = {bmi:.1f} kg/m²</h1>
+            <h2 style="color:{color};">{category}</h2>
             """, unsafe_allow_html=True)
 
             healthy_min = 18.5 * ((height / 100) ** 2)
