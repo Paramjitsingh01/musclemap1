@@ -1,18 +1,8 @@
 # ================= IMPORTS ================= #
-import plotly.graph_objects as go
 import streamlit as st
 from PIL import Image
 import numpy as np
-import plotly.graph_objects as go
-import cv2
 import time
-
-# ================= safe YOLO IMPORT ================= #
-try:
-    from ultralytics import YOLO
-    model = YOLO("yolov8n.pt")
-except Exception as e:
-    model = None
 
 # ================= PAGE CONFIG ================= #
 st.set_page_config(
@@ -169,41 +159,15 @@ elif menu == "AI Meal Scanner":
                 progress = st.progress(0)
 
                 for i in range(100):
-                    time.sleep(0.015)
+                    time.sleep(0.01)
                     progress.progress(i + 1)
 
-                img_array = np.array(image)
-
-                detected_items = []
-
-                # ================= YOLO DETECTION ================= #
-                if model is not None:
-
-                    try:
-                        results = model(img_array)
-
-                        for r in results:
-
-                            boxes = r.boxes
-                            names = r.names
-
-                            for box in boxes:
-
-                                cls = int(box.cls[0])
-                                food_name = names[cls]
-                                detected_items.append(food_name)
-
-                    except:
-                        pass
-
-                # ================= FALLBACK AI ================= #
-                if len(detected_items) == 0:
-
-                    detected_items = [
-                        "Pizza",
-                        "Burger",
-                        "French Fries"
-                    ]
+                # ================= DEMO AI DETECTION ================= #
+                detected_items = [
+                    "Pizza",
+                    "Burger",
+                    "French Fries"
+                ]
 
                 st.success("AI Scan Complete")
 
@@ -330,40 +294,13 @@ elif menu == "BMI Calculator":
             st.markdown(f"""
             <h1>
                 BMI = {bmi:.1f} kg/m²
-                <span style="color:{color};">
-                    ({category})
-                </span>
             </h1>
+
+            <h2 style="color:{color};">
+                {category}
+            </h2>
             """, unsafe_allow_html=True)
 
-            # ================= BMI CHART ================= #
-            fig = go.Figure(go.Indicator(
-                mode="gauge+number",
-                value=bmi,
-                domain={'x': [0, 1], 'y': [0, 1]},
-                title={'text': "BMI"},
-                gauge={
-                    'axis': {'range': [10, 40]},
-                    'bar': {'color': "white"},
-                    'steps': [
-                        {'range': [10, 18.5], 'color': "#FFD966"},
-                        {'range': [18.5, 25], 'color': "#00A651"},
-                        {'range': [25, 30], 'color': "#F4D03F"},
-                        {'range': [30, 40], 'color': "#D7263D"},
-                    ],
-                }
-            ))
-
-            fig.update_layout(
-                height=420,
-                margin=dict(l=20, r=20, t=50, b=20),
-                paper_bgcolor="#0E1117",
-                font={'color': "white", 'family': "Poppins"}
-            )
-
-            st.plotly_chart(fig, use_container_width=True)
-
-            # ================= HEALTH INFO ================= #
             healthy_min = 18.5 * ((height / 100) ** 2)
             healthy_max = 25 * ((height / 100) ** 2)
 
