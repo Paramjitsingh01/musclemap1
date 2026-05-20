@@ -201,13 +201,12 @@ elif menu == "AI Meal Scanner":
 
                         Estimate the following professionally:
 
-                        1. Possible food items
-                        2. Estimated calories
-                        3. Protein
-                        4. Carbohydrates
-                        5. Fat
-                        6. Healthy or unhealthy
-                        7. Short recommendation
+                        1. Name of food items
+                        2. calories in DIGIT
+                        3. Protein in DIGIT
+                        4. Carbohydrates in DIGIT
+                        5. Fat in DIGIT
+                        6. Healthy or unhealthy 2 Lines
 
                         Format output beautifully.
                         """
