@@ -1,8 +1,8 @@
 import streamlit as st
 from PIL import Image
 from groq import Groq
-import numpy as np
-import cv2
+import base64
+import io
 import time
 
 # ================= PAGE CONFIG ================= #
@@ -193,73 +193,54 @@ elif menu == "AI Meal Scanner":
                             time.sleep(0.01)
                             progress.progress(i + 1)
 
-                        # Convert image
-                        image_np = np.array(image)
+                        # Convert image to bytes
+                        buffered = io.BytesIO()
+                        image.save(buffered, format="JPEG")
 
-                        # Basic AI food guess
-                        # You can upgrade later with YOLOv8
+                        img_str = base64.b64encode(
+                            buffered.getvalue()
+                        ).decode()
 
-                        detected_food = "Rice, Chicken Curry, Salad"
+                        prompt = """
+                        Analyze this food image carefully.
 
-                        prompt = f"""
-                        Analyze the following meal:
+                        Identify:
+                        1. Food items
+                        2. Estimated calories
+                        3. Protein
+                        4. Carbs
+                        5. Fat
+                        6. Health recommendation
 
-                        {detected_food}
-
-                        Give response in this format:
-
-                        🍱 Food Items:
-                        - item names
-
-                        🔥 Calories:
-                        - total kcal
-
-                        🥩 Protein:
-                        - grams
-
-                        🍞 Carbs:
-                        - grams
-
-                        🧈 Fat:
-                        - grams
-
-                        ❤️ Recommendation:
-                        - short health advice
-
-                        Keep response clean and professional.
+                        Give clean professional output.
                         """
 
-                        try:
+                        response = client.chat.completions.create(
+                            model="llama-3.3-70b-versatile",
+                            messages=[
+                                {
+                                    "role": "user",
+                                    "content": prompt
+                                }
+                            ],
+                            temperature=0.5,
+                            max_tokens=500
+                        )
 
-                            response = client.chat.completions.create(
-                                model="llama3-70b-8192",
-                                messages=[
-                                    {
-                                        "role": "user",
-                                        "content": prompt
-                                    }
-                                ]
-                            )
+                        result = response.choices[0].message.content
 
-                            result = response.choices[0].message.content
+                        st.success("✅ AI Scan Complete")
 
-                            st.success("✅ AI Scan Complete")
+                        st.markdown("## 🤖 AI Analysis")
 
-                            st.markdown("## 🤖 AI Analysis")
-
-                            st.markdown(
-                                f'''
-                                <div class="result-card">
-                                {result}
-                                </div>
-                                ''',
-                                unsafe_allow_html=True
-                            )
-
-                        except Exception as e:
-
-                            st.error("Groq API Error")
-                            st.code(str(e))
+                        st.markdown(
+                            f"""
+                            <div class="result-card">
+                            {result}
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
 
                 st.markdown(
                     '</div>',
@@ -329,61 +310,54 @@ elif menu == "BMI Calculator":
 
         if calculate:
 
-            try:
+            bmi = weight / ((height / 100) ** 2)
 
-                bmi = weight / ((height / 100) ** 2)
+            if bmi < 18.5:
+                category = "Underweight"
+                color = "orange"
 
-                if bmi < 18.5:
-                    category = "Underweight"
-                    color = "orange"
+            elif bmi < 25:
+                category = "Normal"
+                color = "green"
 
-                elif bmi < 25:
-                    category = "Normal"
-                    color = "green"
+            elif bmi < 30:
+                category = "Overweight"
+                color = "gold"
 
-                elif bmi < 30:
-                    category = "Overweight"
-                    color = "gold"
+            else:
+                category = "Obesity"
+                color = "red"
 
-                else:
-                    category = "Obesity"
-                    color = "red"
+            st.markdown(
+                '<div class="result-card">',
+                unsafe_allow_html=True
+            )
 
-                st.markdown(
-                    '<div class="result-card">',
-                    unsafe_allow_html=True
-                )
+            st.markdown(f"""
+            <h1>BMI = {bmi:.1f} kg/m²</h1>
+            <h2 style="color:{color};">{category}</h2>
+            """, unsafe_allow_html=True)
 
-                st.markdown(f"""
-                <h1>BMI = {bmi:.1f} kg/m²</h1>
-                <h2 style="color:{color};">{category}</h2>
-                """, unsafe_allow_html=True)
+            healthy_min = 18.5 * ((height / 100) ** 2)
+            healthy_max = 25 * ((height / 100) ** 2)
 
-                healthy_min = 18.5 * ((height / 100) ** 2)
-                healthy_max = 25 * ((height / 100) ** 2)
+            st.markdown(f"""
+            ### 📌 Health Information
 
-                st.markdown(f"""
-                ### 📌 Health Information
+            - Healthy BMI range:
+              **18.5 - 25**
 
-                - Healthy BMI range:
-                  **18.5 kg/m² - 25 kg/m²**
+            - Healthy weight:
+              **{healthy_min:.1f} kg - {healthy_max:.1f} kg**
 
-                - Healthy weight for your height:
-                  **{healthy_min:.1f} kg - {healthy_max:.1f} kg**
+            - BMI Category:
+              **{category}**
 
-                - BMI Category:
-                  **{category}**
+            - Gender:
+              **{gender}**
+            """)
 
-                - Gender:
-                  **{gender}**
-                """)
-
-                st.markdown(
-                    '</div>',
-                    unsafe_allow_html=True
-                )
-
-            except Exception as e:
-
-                st.error("BMI Calculation Error")
-                st.code(str(e))
+            st.markdown(
+                '</div>',
+                unsafe_allow_html=True
+            )
