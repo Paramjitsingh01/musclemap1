@@ -12,6 +12,8 @@ pillow==11.2.1
 
 torch==2.7.0
 torchvision==0.22.0
+torchaudio==2.7.0
+
 ultralytics==8.3.146
 
 transformers==4.51.3
@@ -28,3 +30,7 @@ firebase-admin==6.8.0
 
 google-generativeai==0.8.5
 openai==1.78.1
+
+albumentations==2.0.6
+pyyaml==6.0.2
+tqdm==4.67.1
