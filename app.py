@@ -1,112 +1,154 @@
+# ================= IMPORTS ================= #
 import streamlit as st
 from PIL import Image
 import google.generativeai as genai
+import time
 
-# =========================
-# PAGE CONFIG
-# =========================
+# ================= PAGE CONFIG ================= #
 st.set_page_config(
     page_title="Cal AI",
-    page_icon="🔥",
+    page_icon="🍱",
     layout="wide"
 )
 
-# =========================
-# CUSTOM CSS
-# =========================
+# ================= GEMINI API ================= #
+try:
+
+    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+
+    genai.configure(api_key=GEMINI_API_KEY)
+
+    model = genai.GenerativeModel(
+        "gemini-1.5-flash"
+    )
+
+except Exception as e:
+
+    st.error("Gemini API Setup Error")
+    st.code(str(e))
+    st.stop()
+
+# ================= CUSTOM CSS ================= #
 st.markdown("""
 <style>
 
-.main {
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Poppins', sans-serif;
     background-color: #0E1117;
-}
-
-h1, h2, h3 {
     color: white;
 }
 
-.stButton > button {
-    background: linear-gradient(90deg, #00C6FF, #7F00FF);
+.title {
+    font-size: 52px;
+    font-weight: 700;
     color: white;
-    border: none;
-    padding: 0.7rem 1.5rem;
-    border-radius: 15px;
+}
+
+.subtitle {
+    color: #B0B3B8;
     font-size: 18px;
-    font-weight: bold;
 }
 
-.stButton > button:hover {
-    transform: scale(1.03);
+.glass {
+    background: rgba(255,255,255,0.05);
+    padding: 25px;
+    border-radius: 25px;
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
 }
 
-.css-1d391kg {
-    background-color: #111827;
+.metric-card {
+    background: linear-gradient(
+        135deg,
+        rgba(0,255,255,0.08),
+        rgba(138,43,226,0.08)
+    );
+    padding: 25px;
+    border-radius: 25px;
+    text-align: center;
+}
+
+.stButton>button {
+    width: 100%;
+    height: 55px;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(90deg,#00F5FF,#8A2BE2);
+    color: white;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.result-card {
+    background: rgba(255,255,255,0.05);
+    padding: 25px;
+    border-radius: 25px;
+    border: 1px solid rgba(255,255,255,0.08);
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-# =========================
-# GEMINI API CONFIG
-# =========================
-try:
-
-    genai.configure(
-        api_key=st.secrets["GEMINI_API_KEY"]
-    )
-
-    model = genai.GenerativeModel(
-        "gemini-1.5-pro"
-    )
-
-except Exception as e:
-
-    st.error("Gemini API Configuration Error")
-    st.code(str(e))
-    st.stop()
-
-# =========================
-# SIDEBAR
-# =========================
+# ================= SIDEBAR ================= #
 st.sidebar.title("🔥 Cal AI")
 
-page = st.sidebar.radio(
+menu = st.sidebar.radio(
     "Navigation",
-    [
-        "Dashboard",
-        "AI Meal Scanner",
-        "BMI Calculator"
-    ]
+    ["Dashboard", "AI Meal Scanner", "BMI Calculator"]
 )
 
-# =========================
-# DASHBOARD
-# =========================
-if page == "Dashboard":
+# ================= DASHBOARD ================= #
+if menu == "Dashboard":
 
-    st.title("🔥 Cal AI Dashboard")
-
-    st.markdown("""
-    ### Welcome to Cal AI
-
-    Features:
-    - 🍔 AI Meal Scanner
-    - 📸 Food Detection
-    - 🔥 Calories Estimation
-    - 💪 Protein / Carbs / Fat Analysis
-    - 📊 BMI Calculator
-    """)
-
-# =========================
-# AI MEAL SCANNER
-# =========================
-elif page == "AI Meal Scanner":
-
-    st.title("🍔 AI Meal Scanner")
-
-    st.write(
-        "Upload a meal image and let AI analyze calories & nutrition."
+    st.markdown(
+        '<div class="title">Cal AI Dashboard</div>',
+        unsafe_allow_html=True
     )
+
+    st.markdown(
+        '<div class="subtitle">AI-powered calorie tracking & nutrition analysis</div>',
+        unsafe_allow_html=True
+    )
+
+    st.write("")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    cards = [
+        ("🔥", "1850", "Calories"),
+        ("🥩", "120g", "Protein"),
+        ("💧", "3.2L", "Water"),
+        ("⚡", "78%", "Goal")
+    ]
+
+    for col, card in zip([col1, col2, col3, col4], cards):
+
+        with col:
+
+            st.markdown(f"""
+            <div class="metric-card">
+                <h2>{card[0]}</h2>
+                <h1>{card[1]}</h1>
+                <p>{card[2]}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+# ================= AI MEAL SCANNER ================= #
+elif menu == "AI Meal Scanner":
+
+    st.markdown(
+        '<div class="title">AI Meal Scanner</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '<div class="subtitle">Upload meal image and let AI analyze food & calories.</div>',
+        unsafe_allow_html=True
+    )
+
+    st.write("")
 
     uploaded_file = st.file_uploader(
         "Upload Meal Image",
@@ -119,34 +161,45 @@ elif page == "AI Meal Scanner":
 
             image = Image.open(uploaded_file)
 
-            col1, col2 = st.columns(2)
+            col1, col2 = st.columns([1,1])
 
             with col1:
 
                 st.image(
                     image,
-                    caption="Uploaded Meal",
                     use_container_width=True
                 )
 
             with col2:
 
-                st.write("")
+                st.markdown(
+                    '<div class="glass">',
+                    unsafe_allow_html=True
+                )
 
                 if st.button("🔍 Analyze Meal"):
 
-                    with st.spinner("Analyzing meal..."):
+                    with st.spinner("Analyzing Meal..."):
+
+                        progress = st.progress(0)
+
+                        for i in range(100):
+
+                            time.sleep(0.01)
+                            progress.progress(i + 1)
 
                         prompt = """
-                        Analyze this food image and provide:
+                        Analyze this food image.
 
-                        1. Food items detected
+                        Tell:
+                        1. Food names
                         2. Estimated calories
-                        3. Protein estimate
-                        4. Carbohydrates estimate
-                        5. Fat estimate
-                        6. Health rating out of 10
-                        7. Suggest whether this meal is healthy or not
+                        3. Protein
+                        4. Carbs
+                        5. Fat
+                        6. Health recommendation
+
+                        Keep response short and clean.
                         """
 
                         try:
@@ -162,7 +215,14 @@ elif page == "AI Meal Scanner":
 
                             st.markdown("## 🤖 AI Analysis")
 
-                            st.write(response.text)
+                            st.markdown(
+                                f'''
+                                <div class="result-card">
+                                {response.text}
+                                </div>
+                                ''',
+                                unsafe_allow_html=True
+                            )
 
                         except Exception as e:
 
@@ -170,47 +230,130 @@ elif page == "AI Meal Scanner":
 
                             st.code(str(e))
 
+                st.markdown(
+                    '</div>',
+                    unsafe_allow_html=True
+                )
+
         except Exception as e:
 
-            st.error("Image Processing Error")
+            st.error("Image Upload Error")
 
             st.code(str(e))
 
-# =========================
-# BMI CALCULATOR
-# =========================
-elif page == "BMI Calculator":
+# ================= BMI CALCULATOR ================= #
+elif menu == "BMI Calculator":
 
-    st.title("📊 BMI Calculator")
-
-    height = st.number_input(
-        "Enter Height (cm)",
-        min_value=50.0,
-        max_value=300.0,
-        value=170.0
+    st.markdown(
+        '<div class="title">BMI Calculator</div>',
+        unsafe_allow_html=True
     )
 
-    weight = st.number_input(
-        "Enter Weight (kg)",
-        min_value=10.0,
-        max_value=300.0,
-        value=70.0
-    )
+    st.write("")
 
-    if st.button("Calculate BMI"):
+    left_col, right_col = st.columns([1, 1.2])
 
-        bmi = weight / ((height / 100) ** 2)
+    with left_col:
 
-        st.success(f"Your BMI is: {bmi:.2f}")
+        st.markdown(
+            '<div class="glass">',
+            unsafe_allow_html=True
+        )
 
-        if bmi < 18.5:
-            st.warning("Underweight")
+        age = st.number_input(
+            "Age",
+            min_value=2,
+            max_value=120,
+            value=25
+        )
 
-        elif bmi < 25:
-            st.success("Normal Weight")
+        gender = st.radio(
+            "Gender",
+            ["Male", "Female"],
+            horizontal=True
+        )
 
-        elif bmi < 30:
-            st.warning("Overweight")
+        height = st.number_input(
+            "Height (cm)",
+            min_value=100,
+            max_value=250,
+            value=180
+        )
 
-        else:
-            st.error("Obese")
+        weight = st.number_input(
+            "Weight (kg)",
+            min_value=20,
+            max_value=300,
+            value=65
+        )
+
+        calculate = st.button("Calculate BMI")
+
+        st.markdown(
+            '</div>',
+            unsafe_allow_html=True
+        )
+
+    with right_col:
+
+        if calculate:
+
+            try:
+
+                bmi = weight / ((height / 100) ** 2)
+
+                if bmi < 18.5:
+                    category = "Underweight"
+                    color = "orange"
+
+                elif bmi < 25:
+                    category = "Normal"
+                    color = "green"
+
+                elif bmi < 30:
+                    category = "Overweight"
+                    color = "gold"
+
+                else:
+                    category = "Obesity"
+                    color = "red"
+
+                st.markdown(
+                    '<div class="result-card">',
+                    unsafe_allow_html=True
+                )
+
+                st.markdown(f"""
+                <h1>BMI = {bmi:.1f} kg/m²</h1>
+                <h2 style="color:{color};">{category}</h2>
+                """, unsafe_allow_html=True)
+
+                healthy_min = 18.5 * ((height / 100) ** 2)
+                healthy_max = 25 * ((height / 100) ** 2)
+
+                st.markdown(f"""
+                ### 📌 Health Information
+
+                - Healthy BMI range:
+                  **18.5 kg/m² - 25 kg/m²**
+
+                - Healthy weight for your height:
+                  **{healthy_min:.1f} kg - {healthy_max:.1f} kg**
+
+                - BMI Category:
+                  **{category}**
+
+                - Gender:
+                  **{gender}**
+                """)
+
+                st.markdown(
+                    '</div>',
+                    unsafe_allow_html=True
+                )
+
+            except Exception as e:
+
+                st.error("BMI Calculation Error")
+
+                st.code(str(e))
