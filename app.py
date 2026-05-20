@@ -69,6 +69,15 @@ html, body, [class*="css"] {
     text-align: center;
 }
 
+.result-card {
+    background: rgba(255,255,255,0.05);
+    padding: 25px;
+    border-radius: 25px;
+    border: 1px solid rgba(255,255,255,0.08);
+    line-height: 1.8;
+    font-size: 17px;
+}
+
 .stButton>button {
     width: 100%;
     height: 55px;
@@ -78,15 +87,6 @@ html, body, [class*="css"] {
     color: white;
     font-size: 17px;
     font-weight: 600;
-}
-
-.result-card {
-    background: rgba(255,255,255,0.05);
-    padding: 25px;
-    border-radius: 25px;
-    border: 1px solid rgba(255,255,255,0.08);
-    line-height: 1.8;
-    font-size: 17px;
 }
 
 </style>
@@ -111,19 +111,87 @@ if menu == "Dashboard":
     )
 
     st.markdown(
-        '<div class="subtitle">AI-powered calorie tracking & nutrition analysis</div>',
+        '<div class="subtitle">Personalized Fitness & Nutrition Tracker</div>',
         unsafe_allow_html=True
     )
 
     st.write("")
 
+    col_left, col_right = st.columns(2)
+
+    with col_left:
+
+        age = st.number_input(
+            "Age",
+            min_value=10,
+            max_value=100,
+            value=22
+        )
+
+        gender = st.selectbox(
+            "Gender",
+            ["Male", "Female"]
+        )
+
+    with col_right:
+
+        height = st.number_input(
+            "Height (cm)",
+            min_value=100,
+            max_value=250,
+            value=170
+        )
+
+        weight = st.number_input(
+            "Weight (kg)",
+            min_value=20,
+            max_value=250,
+            value=70
+        )
+
+    st.write("")
+
+    # BMI Calculation
+
+    bmi = weight / ((height / 100) ** 2)
+
+    # BMI Category + Calorie Goal
+
+    if bmi < 18.5:
+        category = "Underweight"
+        calorie_goal = weight * 35
+        goal = "Weight Gain"
+
+    elif bmi < 25:
+        category = "Normal"
+        calorie_goal = weight * 30
+        goal = "Maintain Fitness"
+
+    elif bmi < 30:
+        category = "Overweight"
+        calorie_goal = weight * 25
+        goal = "Fat Loss"
+
+    else:
+        category = "Obesity"
+        calorie_goal = weight * 22
+        goal = "Weight Reduction"
+
+    # Daily Nutrition Requirements
+
+    protein = round(weight * 1.6)
+    carbs = round(weight * 4)
+    water = round(weight * 0.035, 1)
+
+    # Dashboard Cards
+
     col1, col2, col3, col4 = st.columns(4)
 
     cards = [
-        ("🔥", "1850", "Calories"),
-        ("🥩", "120g", "Protein"),
-        ("💧", "3.2L", "Water"),
-        ("⚡", "78%", "Goal")
+        ("🔥", f"{int(calorie_goal)} kcal", "Calories"),
+        ("🥩", f"{protein} gm", "Protein"),
+        ("🍞", f"{carbs} gm", "Carbs"),
+        ("💧", f"{water} L", "Water")
     ]
 
     for col, card in zip([col1, col2, col3, col4], cards):
@@ -138,6 +206,36 @@ if menu == "Dashboard":
             </div>
             """, unsafe_allow_html=True)
 
+    st.write("")
+
+    st.markdown(
+        f"""
+        <div class="result-card">
+
+        <h2>📊 BMI Analysis</h2>
+
+        <h3>BMI Score: {bmi:.1f}</h3>
+
+        <h3>Category: {category}</h3>
+
+        <h3>🎯 Goal: {goal}</h3>
+
+        <hr>
+
+        <h3>💪 Daily Nutrition Recommendation</h3>
+
+        <ul>
+            <li>🔥 Calories Needed: <b>{int(calorie_goal)} kcal/day</b></li>
+            <li>🥩 Protein Needed: <b>{protein} gm/day</b></li>
+            <li>🍞 Carbohydrates Needed: <b>{carbs} gm/day</b></li>
+            <li>💧 Water Intake Needed: <b>{water} liters/day</b></li>
+        </ul>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 # ================= AI MEAL SCANNER ================= #
 
 elif menu == "AI Meal Scanner":
@@ -148,7 +246,7 @@ elif menu == "AI Meal Scanner":
     )
 
     st.markdown(
-        '<div class="subtitle">Upload meal image and let AI estimate calories & nutrition.</div>',
+        '<div class="subtitle">Upload food image and get nutrition analysis</div>',
         unsafe_allow_html=True
     )
 
@@ -163,7 +261,6 @@ elif menu == "AI Meal Scanner":
 
         try:
 
-            # FIX RGBA ERROR
             image = Image.open(uploaded_file).convert("RGB")
 
             col1, col2 = st.columns([1, 1])
@@ -192,22 +289,20 @@ elif menu == "AI Meal Scanner":
                             time.sleep(0.01)
                             progress.progress(i + 1)
 
-                        # Save image safely
                         buffered = io.BytesIO()
                         image.save(buffered, format="JPEG")
 
-                        # AI PROMPT
                         prompt = """
                         You are an AI nutrition expert.
 
-                        Analyze the uploaded meal image carefully and estimate the food items and nutrition values.
+                        Analyze the uploaded meal image carefully.
 
                         IMPORTANT:
-                        - Keep the response short, clean, and professional.
-                        - Give approximate values only.
-                        - Do not explain too much.
+                        - Keep response short and clean.
+                        - Give approximate nutrition values.
+                        - Format exactly like below.
 
-                        Response Format:
+                        Example Format:
 
                         🍕 Food Name:
                         Pizza, Fries, Cold Drink
@@ -226,7 +321,7 @@ elif menu == "AI Meal Scanner":
 
                         ❤️ Healthy or Unhealthy:
                         This meal is high in calories and fats.
-                        Eating it occasionally is fine, but avoid frequent consumption.
+                        Eating it occasionally is fine.
 
                         Only follow this format.
                         """
