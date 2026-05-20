@@ -12,16 +12,24 @@ st.set_page_config(
 )
 
 # ================= GEMINI API ================= #
+# ================= GEMINI API ================= #
+
 try:
+
     GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 
     genai.configure(api_key=GEMINI_API_KEY)
 
-    model = genai.GenerativeModel("gemini-pro-vision")
+    model = genai.GenerativeModel(
+        "models/gemini-1.5-flash"
+    )
 
 except Exception as e:
+
     st.error("Gemini API Setup Error")
+
     st.code(str(e))
+
 
 # ================= CUSTOM CSS ================= #
 st.markdown("""
