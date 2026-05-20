@@ -1,7 +1,6 @@
 import streamlit as st
 from PIL import Image
 from groq import Groq
-import base64
 import io
 import time
 
@@ -16,7 +15,6 @@ st.set_page_config(
 # ================= GROQ API ================= #
 
 try:
-
     GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 
     client = Groq(
@@ -24,7 +22,6 @@ try:
     )
 
 except Exception as e:
-
     st.error("Groq API Setup Error")
     st.code(str(e))
     st.stop()
@@ -88,6 +85,7 @@ html, body, [class*="css"] {
     padding: 25px;
     border-radius: 25px;
     border: 1px solid rgba(255,255,255,0.08);
+    line-height: 1.8;
 }
 
 </style>
@@ -149,7 +147,7 @@ elif menu == "AI Meal Scanner":
     )
 
     st.markdown(
-        '<div class="subtitle">Upload meal image and let AI analyze food & calories.</div>',
+        '<div class="subtitle">Upload meal image and let AI estimate calories & nutrition.</div>',
         unsafe_allow_html=True
     )
 
@@ -164,7 +162,8 @@ elif menu == "AI Meal Scanner":
 
         try:
 
-            image = Image.open(uploaded_file)
+            # Convert image properly
+            image = Image.open(uploaded_file).convert("RGB")
 
             col1, col2 = st.columns([1,1])
 
@@ -189,58 +188,63 @@ elif menu == "AI Meal Scanner":
                         progress = st.progress(0)
 
                         for i in range(100):
-
                             time.sleep(0.01)
                             progress.progress(i + 1)
 
-                        # Convert image to bytes
+                        # Save image safely
                         buffered = io.BytesIO()
                         image.save(buffered, format="JPEG")
 
-                        img_str = base64.b64encode(
-                            buffered.getvalue()
-                        ).decode()
-
+                        # AI Prompt
                         prompt = """
-                        Analyze this food image carefully.
+                        A user uploaded a meal image.
 
-                        Identify:
-                        1. Food items
+                        Estimate the following professionally:
+
+                        1. Possible food items
                         2. Estimated calories
                         3. Protein
-                        4. Carbs
+                        4. Carbohydrates
                         5. Fat
-                        6. Health recommendation
+                        6. Healthy or unhealthy
+                        7. Short recommendation
 
-                        Give clean professional output.
+                        Format output beautifully.
                         """
 
-                        response = client.chat.completions.create(
-                            model="llama-3.3-70b-versatile",
-                            messages=[
-                                {
-                                    "role": "user",
-                                    "content": prompt
-                                }
-                            ],
-                            temperature=0.5,
-                            max_tokens=500
-                        )
+                        try:
 
-                        result = response.choices[0].message.content
+                            response = client.chat.completions.create(
+                                model="llama-3.3-70b-versatile",
+                                messages=[
+                                    {
+                                        "role": "user",
+                                        "content": prompt
+                                    }
+                                ],
+                                temperature=0.5,
+                                max_tokens=500
+                            )
 
-                        st.success("✅ AI Scan Complete")
+                            result = response.choices[0].message.content
 
-                        st.markdown("## 🤖 AI Analysis")
+                            st.success("✅ AI Scan Complete")
 
-                        st.markdown(
-                            f"""
-                            <div class="result-card">
-                            {result}
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
+                            st.markdown("## 🤖 AI Analysis")
+
+                            st.markdown(
+                                f"""
+                                <div class="result-card">
+                                {result}
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
+
+                        except Exception as e:
+
+                            st.error("Groq API Error")
+                            st.code(str(e))
 
                 st.markdown(
                     '</div>',
@@ -344,10 +348,10 @@ elif menu == "BMI Calculator":
             st.markdown(f"""
             ### 📌 Health Information
 
-            - Healthy BMI range:
+            - Healthy BMI Range:
               **18.5 - 25**
 
-            - Healthy weight:
+            - Healthy Weight:
               **{healthy_min:.1f} kg - {healthy_max:.1f} kg**
 
             - BMI Category:
