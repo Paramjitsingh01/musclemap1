@@ -1,272 +1,567 @@
+# MuscleMap AI — `app.py`
+
+```python
 import streamlit as st
-from PIL import Image
+import pandas as pd
 import numpy as np
-import time
+from PIL import Image
+import cv2
+import tensorflow as tf
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input, decode_predictions
+from tensorflow.keras.applications import MobileNetV2
 
-# ---------------- PAGE CONFIG ---------------- #
+# -----------------------------
+# PAGE CONFIG
+# -----------------------------
 st.set_page_config(
-    page_title="Cal AI",
-    page_icon="🍱",
-    layout="wide",
+    page_title="MuscleMap AI",
+    page_icon="💪",
+    layout="wide"
 )
 
-# ---------------- CUSTOM CSS ---------------- #
-st.markdown("""
-<style>
+# -----------------------------
+# CUSTOM CSS
+# -----------------------------
+st.markdown(
+    """
+    <style>
+    .main {
+        background-color: #0b0f1a;
+        color: white;
+    }
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+    .stButton>button {
+        background: linear-gradient(90deg, #ff4b4b, #ff6b6b);
+        color: white;
+        border-radius: 12px;
+        height: 50px;
+        width: 100%;
+        border: none;
+        font-size: 18px;
+        font-weight: bold;
+    }
 
-html, body, [class*="css"] {
-    font-family: 'Poppins', sans-serif;
-    background-color: #0E1117;
-    color: white;
-}
+    .metric-box {
+        background: #151a2d;
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0px 4px 20px rgba(255,255,255,0.05);
+    }
 
-.main {
-    background-color: #0E1117;
-}
+    .goal-card {
+        background: #111827;
+        padding: 20px;
+        border-radius: 20px;
+        margin-top: 20px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-.title {
-    font-size: 52px;
-    font-weight: 700;
-    color: white;
-}
+# -----------------------------
+# TITLE
+# -----------------------------
+st.title("💪 MuscleMap AI")
+st.caption("AI Powered Fitness + Meal Calories Detector")
 
-.subtitle {
-    font-size: 18px;
-    color: #B0B3B8;
-}
-
-.glass {
-    background: rgba(255,255,255,0.05);
-    padding: 25px;
-    border-radius: 25px;
-    border: 1px solid rgba(255,255,255,0.1);
-    backdrop-filter: blur(10px);
-}
-
-.metric-card {
-    background: linear-gradient(
-        135deg,
-        rgba(0,255,255,0.08),
-        rgba(138,43,226,0.08)
-    );
-    padding: 20px;
-    border-radius: 20px;
-    text-align: center;
-    border: 1px solid rgba(255,255,255,0.1);
-}
-
-.scan-btn button {
-    width: 100%;
-    height: 55px;
-    border-radius: 15px;
-    border: none;
-    background: linear-gradient(90deg,#00F5FF,#8A2BE2);
-    color: white;
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.stFileUploader {
-    background: rgba(255,255,255,0.03);
-    padding: 20px;
-    border-radius: 20px;
-}
-
-.sidebar .sidebar-content {
-    background-color: #0B0D13;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# ---------------- SIDEBAR ---------------- #
-st.sidebar.title("🔥 Cal AI")
-
+# -----------------------------
+# SIDEBAR
+# -----------------------------
+st.sidebar.title("⚡ Navigation")
 page = st.sidebar.radio(
-    "Navigation",
-    ["Dashboard", "Meal Scanner", "BMI Calculator", "Workout Plan"]
+    "Choose Feature",
+    [
+        "🏋️ AI Fitness Planner",
+        "🍔 AI Meal Calories Detector",
+        "📊 Progress Dashboard"
+    ]
 )
 
-# ---------------- DASHBOARD ---------------- #
-if page == "Dashboard":
+# -----------------------------
+# BMI FUNCTION
+# -----------------------------
+def calculate_bmi(weight, height_cm):
+    height_m = height_cm / 100
+    bmi = weight / (height_m ** 2)
+    return round(bmi, 2)
 
-    st.markdown('<div class="title">Cal AI Dashboard</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="subtitle">Track your meals, calories and fitness goals with AI.</div>',
-        unsafe_allow_html=True
-    )
+# -----------------------------
+# BMI CATEGORY
+# -----------------------------
+def bmi_category(bmi):
+    if bmi < 18.5:
+        return "Underweight"
+    elif 18.5 <= bmi < 25:
+        return "Normal Weight"
+    elif 25 <= bmi < 30:
+        return "Overweight"
+    else:
+        return "Obese"
 
-    st.write("")
+# -----------------------------
+# AI WORKOUT RECOMMENDATIONS
+# -----------------------------
+def get_workout(goal, experience):
 
-    col1, col2, col3, col4 = st.columns(4)
+    workouts = {
+        "Weight Loss": {
+            "Beginner": [
+                "Walking - 30 mins",
+                "Jump Rope - 10 mins",
+                "Bodyweight Squats - 3x12",
+                "Pushups - 3x10",
+                "Cycling"
+            ],
+            "Intermediate": [
+                "HIIT Workout",
+                "Running - 5 KM",
+                "Burpees - 4x15",
+                "Mountain Climbers",
+                "Core Workout"
+            ],
+            "Advanced": [
+                "CrossFit",
+                "Sprint Training",
+                "Battle Ropes",
+                "Weighted Circuits",
+                "Athletic Conditioning"
+            ]
+        },
+
+        "Muscle Gain": {
+            "Beginner": [
+                "Bench Press",
+                "Lat Pulldown",
+                "Shoulder Press",
+                "Leg Press",
+                "Protein Rich Diet"
+            ],
+            "Intermediate": [
+                "Deadlifts",
+                "Incline Dumbbell Press",
+                "Barbell Rows",
+                "Bulgarian Squats",
+                "Pullups"
+            ],
+            "Advanced": [
+                "Powerlifting",
+                "Heavy Squats",
+                "Olympic Lifting",
+                "Weighted Pullups",
+                "Advanced Hypertrophy"
+            ]
+        },
+
+        "Strength Training": {
+            "Beginner": [
+                "Pushups",
+                "Plank",
+                "Dumbbell Press",
+                "Goblet Squat",
+                "Resistance Band Workout"
+            ],
+            "Intermediate": [
+                "Bench Press",
+                "Deadlifts",
+                "Barbell Squats",
+                "Military Press",
+                "Weighted Dips"
+            ],
+            "Advanced": [
+                "Powerlifting Program",
+                "Heavy Deadlifts",
+                "Front Squats",
+                "Clean and Jerk",
+                "Athlete Conditioning"
+            ]
+        }
+    }
+
+    return workouts[goal][experience]
+
+# -----------------------------
+# FITNESS PAGE
+# -----------------------------
+if page == "🏋️ AI Fitness Planner":
+
+    st.header("🔥 Build Your AI Fitness Plan")
+
+    col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown("""
-        <div class="metric-card">
-            <h2>🔥</h2>
-            <h1>1850</h1>
-            <p>Calories</p>
-        </div>
-        """, unsafe_allow_html=True)
+        age = st.number_input("Age", 15, 80, 22)
+        gender = st.selectbox("Gender", ["Male", "Female"])
 
     with col2:
-        st.markdown("""
-        <div class="metric-card">
-            <h2>🥩</h2>
-            <h1>120g</h1>
-            <p>Protein</p>
-        </div>
-        """, unsafe_allow_html=True)
+        height = st.number_input("Height (cm)", 120, 250, 170)
+        weight = st.number_input("Weight (kg)", 30.0, 200.0, 70.0)
 
     with col3:
-        st.markdown("""
-        <div class="metric-card">
-            <h2>💧</h2>
-            <h1>3.2L</h1>
-            <p>Water</p>
-        </div>
-        """, unsafe_allow_html=True)
+        goal = st.selectbox(
+            "Primary Goal",
+            ["Weight Loss", "Muscle Gain", "Strength Training"]
+        )
 
-    with col4:
-        st.markdown("""
-        <div class="metric-card">
-            <h2>⚡</h2>
-            <h1>78%</h1>
-            <p>Goal</p>
-        </div>
-        """, unsafe_allow_html=True)
+        experience = st.selectbox(
+            "Gym Experience",
+            ["Beginner", "Intermediate", "Advanced"]
+        )
 
-    st.write("")
-    st.write("")
+    if st.button("🚀 Generate AI Plan"):
 
-    st.markdown("""
-    <div class="glass">
-        <h3>📈 Daily Progress</h3>
-        <p>Your calorie intake is within your target range today.</p>
-    </div>
-    """, unsafe_allow_html=True)
+        bmi = calculate_bmi(weight, height)
+        category = bmi_category(bmi)
 
-# ---------------- MEAL SCANNER ---------------- #
-elif page == "Meal Scanner":
+        st.markdown("---")
 
-    st.markdown('<div class="title">AI Meal Scanner</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="subtitle">Upload a meal image and let AI detect calories.</div>',
-        unsafe_allow_html=True
+        colA, colB = st.columns(2)
+
+        with colA:
+            st.markdown(
+                f"""
+                <div class='metric-box'>
+                    <h2>📊 Your BMI</h2>
+                    <h1>{bmi}</h1>
+                    <h3>{category}</h3>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        with colB:
+            if goal == "Weight Loss":
+                calories = int(weight * 24 - 500)
+            elif goal == "Muscle Gain":
+                calories = int(weight * 24 + 350)
+            else:
+                calories = int(weight * 24)
+
+            st.markdown(
+                f"""
+                <div class='metric-box'>
+                    <h2>🍽️ Recommended Calories</h2>
+                    <h1>{calories} kcal/day</h1>
+                    <h3>Based on your goal</h3>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+        st.markdown("## 🤖 AI Recommended Exercises")
+
+        workouts = get_workout(goal, experience)
+
+        for workout in workouts:
+            st.success(workout)
+
+        st.markdown("## 🥗 AI Diet Suggestion")
+
+        if goal == "Weight Loss":
+            st.info("High protein + low calorie meals. Avoid sugary drinks.")
+
+        elif goal == "Muscle Gain":
+            st.info("Increase protein intake, healthy carbs, and calorie surplus.")
+
+        else:
+            st.info("Balanced protein, carbs, and healthy fats.")
+
+# -----------------------------
+# MEAL DETECTOR
+# -----------------------------
+elif page == "🍔 AI Meal Calories Detector":
+
+    st.header("🍕 AI Meal Calories Detector")
+
+    st.write(
+        "Upload a meal image and AI will try to detect the food and estimate calories."
     )
-
-    st.write("")
 
     uploaded_file = st.file_uploader(
         "Upload Meal Image",
-        type=["jpg", "png", "jpeg"]
+        type=["jpg", "jpeg", "png"]
     )
+
+    # LOAD MODEL
+    model = MobileNetV2(weights="imagenet")
+
+    calorie_database = {
+        "pizza": 285,
+        "burger": 295,
+        "hotdog": 290,
+        "icecream": 207,
+        "banana": 89,
+        "apple": 52,
+        "orange": 47,
+        "sandwich": 250,
+        "spaghetti": 158,
+        "french_loaf": 250
+    }
 
     if uploaded_file:
 
         image = Image.open(uploaded_file)
+        st.image(image, caption="Uploaded Meal", use_container_width=True)
 
-        col1, col2 = st.columns([1,1])
+        img = np.array(image)
+        img = cv2.resize(img, (224, 224))
 
-        with col1:
-            st.image(image, use_container_width=True)
+        img_array = np.expand_dims(img, axis=0)
+        img_array = preprocess_input(img_array)
 
-        with col2:
+        predictions = model.predict(img_array)
+        decoded = decode_predictions(predictions, top=3)[0]
 
-            st.markdown('<div class="glass">', unsafe_allow_html=True)
+        st.subheader("🔍 AI Predictions")
 
-            if st.button("🔍 Scan Meal"):
+        detected_food = decoded[0][1]
 
-                progress = st.progress(0)
+        for pred in decoded:
+            st.write(f"{pred[1]} — Confidence: {round(pred[2]*100,2)}%")
 
-                for i in range(100):
-                    time.sleep(0.01)
-                    progress.progress(i + 1)
+        calories = calorie_database.get(detected_food, 200)
 
-                st.success("AI Scan Complete")
+        st.markdown("---")
 
-                # Dummy Results
-                st.markdown("### 🍕 Detected Foods")
-                st.write("- Pizza")
-                st.write("- French Fries")
-                st.write("- Cola")
+        st.markdown(
+            f"""
+            <div class='metric-box'>
+                <h2>Estimated Meal Calories</h2>
+                <h1>{calories} kcal</h1>
+                <h3>{detected_food}</h3>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-                st.markdown("### 📊 Nutrition")
-                st.write("Calories: 850 kcal")
-                st.write("Protein: 24g")
-                st.write("Carbs: 90g")
-                st.write("Fat: 40g")
+        st.warning(
+            "AI calories are estimated values and may vary depending on portion size."
+        )
 
-                st.markdown("### 🤖 AI Recommendation")
-                st.info(
-                    "High calorie meal detected. Consider adding more protein and vegetables."
-                )
+# -----------------------------
+# DASHBOARD
+# -----------------------------
+elif page == "📊 Progress Dashboard":
 
-            st.markdown('</div>', unsafe_allow_html=True)
+    st.header("📈 Fitness Progress Dashboard")
 
-# ---------------- BMI CALCULATOR ---------------- #
-elif page == "BMI Calculator":
+    progress_data = {
+        "Week": [1, 2, 3, 4, 5],
+        "Weight": [78, 77, 76, 75, 74],
+        "Calories Burned": [2000, 2400, 2800, 3200, 3500]
+    }
 
-    st.markdown('<div class="title">BMI Calculator</div>', unsafe_allow_html=True)
+    df = pd.DataFrame(progress_data)
 
-    col1, col2 = st.columns(2)
+    st.subheader("🏋️ Weight Progress")
+    st.line_chart(df.set_index("Week")["Weight"])
 
-    with col1:
-        weight = st.number_input("Weight (kg)", 30, 200)
+    st.subheader("🔥 Calories Burned")
+    st.bar_chart(df.set_index("Week")["Calories Burned"])
 
-    with col2:
-        height = st.number_input("Height (cm)", 100, 250)
+    st.dataframe(df)
 
-    if st.button("Calculate BMI"):
+# -----------------------------
+# FOOTER
+# -----------------------------
+st.markdown("---")
+st.caption("Made with ❤️ using Streamlit + OpenCV + TensorFlow")
+```
 
-        bmi = weight / ((height / 100) ** 2)
+---
 
-        st.markdown(f"""
-        <div class="glass">
-            <h2>Your BMI: {bmi:.2f}</h2>
-        </div>
-        """, unsafe_allow_html=True)
+# 📦 Requirements (`requirements.txt`)
 
-        if bmi < 18.5:
-            st.warning("Underweight")
-        elif bmi < 25:
-            st.success("Normal Weight")
-        elif bmi < 30:
-            st.warning("Overweight")
-        else:
-            st.error("Obese")
+```txt
+streamlit
+pandas
+numpy
+opencv-python
+pillow
+tensorflow
+```
 
-# ---------------- WORKOUT PLAN ---------------- #
-elif page == "Workout Plan":
+---
 
-    st.markdown('<div class="title">AI Workout Recommendation</div>', unsafe_allow_html=True)
+# ▶️ Run The Project
 
-    goal = st.selectbox(
-        "Select Goal",
-        ["Fat Loss", "Muscle Gain", "Strength Training"]
-    )
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
 
-    if st.button("Generate Plan"):
+---
 
-        st.markdown('<div class="glass">', unsafe_allow_html=True)
+# 🚀 Future AI Features You Can Add
 
-        if goal == "Fat Loss":
-            st.write("🏃 HIIT Cardio")
-            st.write("🔥 Treadmill - 20 mins")
-            st.write("💪 Pushups - 3x15")
-            st.write("🦵 Squats - 3x20")
+## 1. AI Pose Detection
 
-        elif goal == "Muscle Gain":
-            st.write("🏋️ Bench Press - 4x10")
-            st.write("💪 Deadlift - 4x8")
-            st.write("🦵 Leg Press - 4x12")
+Use MediaPipe to check exercise form live through webcam.
 
-        else:
-            st.write("⚡ Powerlifting")
-            st.write("🏋️ Squats - 5x5")
-            st.write("💪 Bench Press - 5x5")
-            st.write("🔥 Deadlift - 5x5")
+## 2. Real-Time Calorie Burn Counter
 
-        st.markdown('</div>', unsafe_allow_html=True)
+Track workout movement and estimate calories burned.
+
+## 3. AI Diet Planner
+
+Generate personalized meals according to BMI and goals.
+
+## 4. AI Chatbot Trainer
+
+ChatGPT-like gym assistant inside MuscleMap.
+
+## 5. Muscle Heatmap
+
+Highlight muscles targeted during exercises.
+
+## 6. Workout Streak System
+
+Gamification with badges and rewards.
+
+## 7. AI Progress Prediction
+
+Predict body transformation after 30/60/90 days.
+
+## 8. Smart Meal Portion Detection
+
+Use YOLOv8 + Depth Estimation for accurate calories.
+
+---
+
+# 🧠 Best AI Upgrade (Production Level Food AI)
+
+Most advanced calorie apps like Cal AI, HealthifyMe, and MyFitnessPal use:
+
+* YOLOv8 for food object detection
+* EfficientNet / Vision Transformers for food classification
+* Food101 + Nutrition5k datasets
+* Depth estimation for portion size
+* OpenAI Vision / Gemini Vision APIs
+
+---
+
+# ✅ Best Algorithm For Your MuscleMap App
+
+## Recommended AI Stack
+
+### 1. YOLOv8 (Best Food Detection)
+
+Use YOLOv8 to detect:
+
+* Pizza
+* Burger
+* Rice
+* Chicken
+* Fruits
+* Indian food
+* Drinks
+* Multiple food items in one image
+
+Why YOLOv8?
+
+* Extremely accurate
+* Real-time detection
+* Works on webcam + mobile
+* Industry standard in 2025
+
+Install:
+
+```bash
+pip install ultralytics
+```
+
+Example:
+
+```python
+from ultralytics import YOLO
+
+model = YOLO("yolov8n.pt")
+results = model("food.jpg")
+results[0].show()
+```
+
+---
+
+### 2. EfficientNet-B3 (Food Classification)
+
+After YOLO detects food, EfficientNet identifies exact food type.
+
+Example:
+
+* Paneer Butter Masala
+* Biryani
+* Pasta
+* Sandwich
+* Salad
+
+This gives much higher accuracy than MobileNet.
+
+---
+
+### 3. Nutrition5k Dataset (Calories)
+
+Use Nutrition5k dataset for:
+
+* calories
+* protein
+* carbs
+* fats
+* portion estimation
+
+---
+
+### 4. Segment Anything Model (SAM)
+
+Use Meta SAM model to detect exact food boundaries.
+
+This improves:
+
+* calorie estimation
+* plate segmentation
+* multiple food detection
+
+---
+
+# 🚀 FINAL INDUSTRY LEVEL PIPELINE
+
+```text
+Image Upload
+     ↓
+YOLOv8 detects food objects
+     ↓
+EfficientNet classifies food
+     ↓
+SAM segments food portion
+     ↓
+Nutrition5k estimates calories
+     ↓
+AI generates meal report
+```
+
+---
+
+# 🔥 Best Tech Stack For MuscleMap
+
+| Feature                 | Best AI Model     |
+| ----------------------- | ----------------- |
+| Food Detection          | YOLOv8            |
+| Food Classification     | EfficientNet-B3   |
+| Portion Detection       | SAM               |
+| Calories Estimation     | Nutrition5k       |
+| Exercise Form Detection | MediaPipe         |
+| AI Recommendations      | OpenAI/Gemini API |
+| Workout Prediction      | XGBoost           |
+
+---
+
+# 🏆 Recommended Final Upgrade
+
+Replace MobileNetV2 with:
+
+```python
+from ultralytics import YOLO
+model = YOLO("best_food_model.pt")
+```
+
+This will improve your food detection accuracy massively and make MuscleMap look like a real startup-level AI fitness app.
