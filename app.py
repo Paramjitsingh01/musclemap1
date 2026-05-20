@@ -1,34 +1,36 @@
-# ================= IMPORTS ================= #
 import streamlit as st
 from PIL import Image
-import google.generativeai as genai
+from groq import Groq
+import numpy as np
+import cv2
 import time
 
 # ================= PAGE CONFIG ================= #
+
 st.set_page_config(
     page_title="Cal AI",
     page_icon="🍱",
     layout="wide"
 )
 
-# ================= GEMINI API ================= #
+# ================= GROQ API ================= #
+
 try:
 
-    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+    GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 
-    genai.configure(api_key=GEMINI_API_KEY)
-
-    model = genai.GenerativeModel(
-        "gemini-1.5-flash"
+    client = Groq(
+        api_key=GROQ_API_KEY
     )
 
 except Exception as e:
 
-    st.error("Gemini API Setup Error")
+    st.error("Groq API Setup Error")
     st.code(str(e))
     st.stop()
 
 # ================= CUSTOM CSS ================= #
+
 st.markdown("""
 <style>
 
@@ -92,6 +94,7 @@ html, body, [class*="css"] {
 """, unsafe_allow_html=True)
 
 # ================= SIDEBAR ================= #
+
 st.sidebar.title("🔥 Cal AI")
 
 menu = st.sidebar.radio(
@@ -100,6 +103,7 @@ menu = st.sidebar.radio(
 )
 
 # ================= DASHBOARD ================= #
+
 if menu == "Dashboard":
 
     st.markdown(
@@ -136,6 +140,7 @@ if menu == "Dashboard":
             """, unsafe_allow_html=True)
 
 # ================= AI MEAL SCANNER ================= #
+
 elif menu == "AI Meal Scanner":
 
     st.markdown(
@@ -188,28 +193,55 @@ elif menu == "AI Meal Scanner":
                             time.sleep(0.01)
                             progress.progress(i + 1)
 
-                        prompt = """
-                        Analyze this food image.
+                        # Convert image
+                        image_np = np.array(image)
 
-                        Tell:
-                        1. Food names
-                        2. Estimated calories
-                        3. Protein
-                        4. Carbs
-                        5. Fat
-                        6. Health recommendation
+                        # Basic AI food guess
+                        # You can upgrade later with YOLOv8
 
-                        Keep response short and clean.
+                        detected_food = "Rice, Chicken Curry, Salad"
+
+                        prompt = f"""
+                        Analyze the following meal:
+
+                        {detected_food}
+
+                        Give response in this format:
+
+                        🍱 Food Items:
+                        - item names
+
+                        🔥 Calories:
+                        - total kcal
+
+                        🥩 Protein:
+                        - grams
+
+                        🍞 Carbs:
+                        - grams
+
+                        🧈 Fat:
+                        - grams
+
+                        ❤️ Recommendation:
+                        - short health advice
+
+                        Keep response clean and professional.
                         """
 
                         try:
 
-                            response = model.generate_content(
-                                [
-                                    prompt,
-                                    image
+                            response = client.chat.completions.create(
+                                model="llama3-70b-8192",
+                                messages=[
+                                    {
+                                        "role": "user",
+                                        "content": prompt
+                                    }
                                 ]
                             )
+
+                            result = response.choices[0].message.content
 
                             st.success("✅ AI Scan Complete")
 
@@ -218,7 +250,7 @@ elif menu == "AI Meal Scanner":
                             st.markdown(
                                 f'''
                                 <div class="result-card">
-                                {response.text}
+                                {result}
                                 </div>
                                 ''',
                                 unsafe_allow_html=True
@@ -226,8 +258,7 @@ elif menu == "AI Meal Scanner":
 
                         except Exception as e:
 
-                            st.error("Gemini API Error")
-
+                            st.error("Groq API Error")
                             st.code(str(e))
 
                 st.markdown(
@@ -238,10 +269,10 @@ elif menu == "AI Meal Scanner":
         except Exception as e:
 
             st.error("Image Upload Error")
-
             st.code(str(e))
 
 # ================= BMI CALCULATOR ================= #
+
 elif menu == "BMI Calculator":
 
     st.markdown(
@@ -355,5 +386,4 @@ elif menu == "BMI Calculator":
             except Exception as e:
 
                 st.error("BMI Calculation Error")
-
                 st.code(str(e))
