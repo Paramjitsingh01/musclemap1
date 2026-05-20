@@ -1,12 +1,11 @@
 # ================= IMPORTS ================= #
 import streamlit as st
-pip install ultralytics
-rom PIL import Image
+from ultralytics import YOLO
+from PIL import Image
 import numpy as np
 import plotly.graph_objects as go
 import cv2
 import time
-
 # ================= PAGE CONFIG ================= #
 st.set_page_config(
     page_title="Cal AI",
