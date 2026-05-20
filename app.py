@@ -200,10 +200,10 @@ elif menu == "AI Meal Scanner":
                         
 
                         1. Food item NAME
-                        2. calories in DIGIT in gm
-                        3. Protein in DIGIT in gm
-                        4. Carbohydrates in DIGIT in gm
-                        5. Fat in DIGIT In gm
+                        2. calories in " "gm
+                        3. Protein in " "gm
+                        4. Carbohydrates in " "gm
+                        5. Fat in " "gm
                         6. Healthy or unhealthy 2 Lines
 
                         Format output beautifully.
