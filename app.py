@@ -12,7 +12,6 @@ st.set_page_config(
 )
 
 # ================= GEMINI API ================= #
-# ================= GEMINI API ================= #
 
 try:
 
@@ -20,9 +19,7 @@ try:
 
     genai.configure(api_key=GEMINI_API_KEY)
 
-    model = genai.GenerativeModel(
-        "models/gemini-1.5-flash"
-    )
+    model = genai.GenerativeModel("models/gemini-1.5-flash")
 
 except Exception as e:
 
