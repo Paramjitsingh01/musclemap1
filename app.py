@@ -14,11 +14,12 @@ st.set_page_config(
 
 # ================= GEMINI API ================= #
 # ================= GEMINI API ================= #
-GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+response = model.generate_content([
+    prompt,
+    Image.open(uploaded_file)
+])
 
-genai.configure(api_key=GEMINI_API_KEY)
-
-model = genai.GenerativeModel("gemini-1.5-flash")
+st.write(response.text)
 
 # ================= CUSTOM CSS ================= #
 st.markdown("""
@@ -186,8 +187,12 @@ elif menu == "AI Meal Scanner":
                 Keep response short and clean.
                 """
 
-                response = model.generate_content(
-                    [prompt, image]
+                response = model.generate_content([
+                 prompt,
+                   Image.open(uploaded_file)
+                ])
+
+                
                 )
 
                 st.success("AI Scan Complete")
