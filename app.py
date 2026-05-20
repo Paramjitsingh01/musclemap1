@@ -1,4 +1,5 @@
 # ================= IMPORTS ================= #
+# ================= IMPORTS ================= #
 import streamlit as st
 from PIL import Image
 import google.generativeai as genai
@@ -12,7 +13,8 @@ st.set_page_config(
 )
 
 # ================= GEMINI API ================= #
-GEMINI_API_KEY = "AIzaSyB40Ryu_9p3EPkfp0ilK5KptonJ3HwILY0"
+# ================= GEMINI API ================= #
+GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 
 genai.configure(api_key=GEMINI_API_KEY)
 
