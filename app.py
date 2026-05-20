@@ -12,11 +12,16 @@ st.set_page_config(
 )
 
 # ================= GEMINI API ================= #
-model = genai.GenerativeModel("gemini-1.5-flash")
+try:
+    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 
-genai.configure(api_key=GEMINI_API_KEY)
+    genai.configure(api_key=GEMINI_API_KEY)
 
-model = genai.GenerativeModel("gemini-1.5-pro")
+    model = genai.GenerativeModel("gemini-1.5-flash")
+
+except Exception as e:
+    st.error("Gemini API Setup Error")
+    st.code(str(e))
 
 # ================= CUSTOM CSS ================= #
 st.markdown("""
@@ -146,51 +151,67 @@ elif menu == "AI Meal Scanner":
 
     if uploaded_file is not None:
 
-        image = Image.open(uploaded_file)
+        try:
 
-        col1, col2 = st.columns([1,1])
+            image = Image.open(uploaded_file)
 
-        with col1:
-            st.image(image, use_container_width=True)
+            col1, col2 = st.columns([1,1])
 
-        with col2:
+            with col1:
+                st.image(image, use_container_width=True)
 
-            st.markdown('<div class="glass">', unsafe_allow_html=True)
+            with col2:
 
-            if st.button("🔍 Analyze Meal"):
+                st.markdown('<div class="glass">', unsafe_allow_html=True)
 
-                progress = st.progress(0)
+                if st.button("🔍 Analyze Meal"):
 
-                for i in range(100):
-                    time.sleep(0.01)
-                    progress.progress(i + 1)
+                    progress = st.progress(0)
 
-                prompt = """
-                Analyze this food image.
+                    for i in range(100):
+                        time.sleep(0.01)
+                        progress.progress(i + 1)
 
-                Tell:
-                1. Food names
-                2. Estimated calories
-                3. Protein
-                4. Carbs
-                5. Fat
-                6. Health recommendation
+                    prompt = """
+                    Analyze this food image.
 
-                Keep response short and clean.
-                """
+                    Tell:
+                    1. Food names
+                    2. Estimated calories
+                    3. Protein
+                    4. Carbs
+                    5. Fat
+                    6. Health recommendation
 
-                response = model.generate_content([
-                    prompt,
-                    image
-                ])
+                    Keep response short and clean.
+                    """
 
-                st.success("AI Scan Complete")
+                    try:
 
-                st.markdown("## 🤖 AI Analysis")
+                        response = model.generate_content([
+                            prompt,
+                            image
+                        ])
 
-                st.write(response.text)
+                        st.success("AI Scan Complete")
 
-            st.markdown('</div>', unsafe_allow_html=True)
+                        st.markdown("## 🤖 AI Analysis")
+
+                        st.write(response.text)
+
+                    except Exception as e:
+
+                        st.error("Gemini API Error")
+
+                        st.code(str(e))
+
+                st.markdown('</div>', unsafe_allow_html=True)
+
+        except Exception as e:
+
+            st.error("Image Upload Error")
+
+            st.code(str(e))
 
 # ================= BMI CALCULATOR ================= #
 elif menu == "BMI Calculator":
@@ -204,7 +225,6 @@ elif menu == "BMI Calculator":
 
     left_col, right_col = st.columns([1, 1.2])
 
-    # ================= LEFT SIDE ================= #
     with left_col:
 
         st.markdown('<div class="glass">', unsafe_allow_html=True)
@@ -240,53 +260,60 @@ elif menu == "BMI Calculator":
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ================= RIGHT SIDE ================= #
     with right_col:
 
         if calculate:
 
-            bmi = weight / ((height / 100) ** 2)
+            try:
 
-            if bmi < 18.5:
-                category = "Underweight"
-                color = "orange"
+                bmi = weight / ((height / 100) ** 2)
 
-            elif bmi < 25:
-                category = "Normal"
-                color = "green"
+                if bmi < 18.5:
+                    category = "Underweight"
+                    color = "orange"
 
-            elif bmi < 30:
-                category = "Overweight"
-                color = "gold"
+                elif bmi < 25:
+                    category = "Normal"
+                    color = "green"
 
-            else:
-                category = "Obesity"
-                color = "red"
+                elif bmi < 30:
+                    category = "Overweight"
+                    color = "gold"
 
-            st.markdown('<div class="result-card">', unsafe_allow_html=True)
+                else:
+                    category = "Obesity"
+                    color = "red"
 
-            st.markdown(f"""
-            <h1>BMI = {bmi:.1f} kg/m²</h1>
-            <h2 style="color:{color};">{category}</h2>
-            """, unsafe_allow_html=True)
+                st.markdown('<div class="result-card">', unsafe_allow_html=True)
 
-            healthy_min = 18.5 * ((height / 100) ** 2)
-            healthy_max = 25 * ((height / 100) ** 2)
+                st.markdown(f"""
+                <h1>BMI = {bmi:.1f} kg/m²</h1>
+                <h2 style="color:{color};">{category}</h2>
+                """, unsafe_allow_html=True)
 
-            st.markdown(f"""
-            ### 📌 Health Information
+                healthy_min = 18.5 * ((height / 100) ** 2)
+                healthy_max = 25 * ((height / 100) ** 2)
 
-            - Healthy BMI range:
-              **18.5 kg/m² - 25 kg/m²**
+                st.markdown(f"""
+                ### 📌 Health Information
 
-            - Healthy weight for your height:
-              **{healthy_min:.1f} kg - {healthy_max:.1f} kg**
+                - Healthy BMI range:
+                  **18.5 kg/m² - 25 kg/m²**
 
-            - BMI Category:
-              **{category}**
+                - Healthy weight for your height:
+                  **{healthy_min:.1f} kg - {healthy_max:.1f} kg**
 
-            - Gender:
-              **{gender}**
-            """)
+                - BMI Category:
+                  **{category}**
 
-            st.markdown('</div>', unsafe_allow_html=True)
+                - Gender:
+                  **{gender}**
+                """)
+
+                st.markdown('</div>', unsafe_allow_html=True)
+
+            except Exception as e:
+
+                st.error("BMI Calculation Error")
+
+                st.code(str(e))
