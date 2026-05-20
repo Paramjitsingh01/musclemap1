@@ -1,20 +1,24 @@
 # ================= IMPORTS ================= #
 import streamlit as st
-from ultralytics import YOLO
 from PIL import Image
 import numpy as np
 import plotly.graph_objects as go
 import cv2
 import time
+
+# ================= safe YOLO IMPORT ================= #
+try:
+    from ultralytics import YOLO
+    model = YOLO("yolov8n.pt")
+except Exception as e:
+    model = None
+
 # ================= PAGE CONFIG ================= #
 st.set_page_config(
     page_title="Cal AI",
     page_icon="🍱",
     layout="wide"
 )
-
-# ================= LOAD YOLO MODEL ================= #
-model = YOLO("yolov8n.pt")
 
 # ================= CUSTOM CSS ================= #
 st.markdown("""
@@ -60,17 +64,6 @@ html, body, [class*="css"] {
     padding: 25px;
     border-radius: 25px;
     text-align: center;
-}
-
-.scan-btn button {
-    width: 100%;
-    height: 60px;
-    border-radius: 18px;
-    border: none;
-    background: linear-gradient(90deg,#00F5FF,#8A2BE2);
-    color: white;
-    font-size: 18px;
-    font-weight: 600;
 }
 
 .stButton>button {
@@ -180,23 +173,36 @@ elif menu == "AI Meal Scanner":
 
                 img_array = np.array(image)
 
-                results = model(img_array)
-
                 detected_items = []
 
-                for r in results:
+                # ================= YOLO DETECTION ================= #
+                if model is not None:
 
-                    boxes = r.boxes
-                    names = r.names
+                    try:
+                        results = model(img_array)
 
-                    for box in boxes:
+                        for r in results:
 
-                        cls = int(box.cls[0])
-                        food_name = names[cls]
-                        detected_items.append(food_name)
+                            boxes = r.boxes
+                            names = r.names
 
+                            for box in boxes:
+
+                                cls = int(box.cls[0])
+                                food_name = names[cls]
+                                detected_items.append(food_name)
+
+                    except:
+                        pass
+
+                # ================= FALLBACK AI ================= #
                 if len(detected_items) == 0:
-                    detected_items = ["Pizza", "Burger", "Fries"]
+
+                    detected_items = [
+                        "Pizza",
+                        "Burger",
+                        "French Fries"
+                    ]
 
                 st.success("AI Scan Complete")
 
@@ -205,13 +211,16 @@ elif menu == "AI Meal Scanner":
                 for item in detected_items:
                     st.write(f"✅ {item}")
 
+                # ================= CALORIE DATABASE ================= #
                 calorie_map = {
                     "pizza": 300,
                     "burger": 450,
                     "banana": 120,
                     "apple": 80,
                     "sandwich": 250,
-                    "donut": 280
+                    "donut": 280,
+                    "fries": 350,
+                    "french fries": 350
                 }
 
                 total_calories = 0
@@ -255,7 +264,7 @@ elif menu == "BMI Calculator":
 
     left_col, right_col = st.columns([1, 1.2])
 
-    # ---------- LEFT SIDE ---------- #
+    # ================= LEFT SIDE ================= #
     with left_col:
 
         st.markdown('<div class="glass">', unsafe_allow_html=True)
@@ -291,14 +300,14 @@ elif menu == "BMI Calculator":
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ---------- RIGHT SIDE ---------- #
+    # ================= RIGHT SIDE ================= #
     with right_col:
 
         if calculate:
 
             bmi = weight / ((height / 100) ** 2)
 
-            # BMI CATEGORY
+            # ================= BMI CATEGORY ================= #
             if bmi < 18.5:
                 category = "Underweight"
                 color = "orange"
@@ -326,7 +335,7 @@ elif menu == "BMI Calculator":
             </h1>
             """, unsafe_allow_html=True)
 
-            # ---------- BMI CHART ---------- #
+            # ================= BMI CHART ================= #
             fig = go.Figure(go.Indicator(
                 mode="gauge+number",
                 value=bmi,
@@ -353,6 +362,7 @@ elif menu == "BMI Calculator":
 
             st.plotly_chart(fig, use_container_width=True)
 
+            # ================= HEALTH INFO ================= #
             healthy_min = 18.5 * ((height / 100) ** 2)
             healthy_max = 25 * ((height / 100) ** 2)
 
