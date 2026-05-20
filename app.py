@@ -197,9 +197,7 @@ elif menu == "AI Meal Scanner":
 
                         # AI Prompt
                         prompt = """
-                        A user uploaded a meal image.
-
-                        Estimate the following professionally:
+                        
 
                         1. Food item NAME
                         2. calories in DIGIT
