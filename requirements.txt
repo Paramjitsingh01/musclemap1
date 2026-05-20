@@ -1,5 +1,5 @@
 streamlit
 pillow
 groq
-opencv-python
+opencv-python-headless
 numpy
