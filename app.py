@@ -371,5 +371,3 @@ st.caption("Made with ❤️ using Streamlit + OpenCV + TensorFlow")
 
 
 
-# 📦 Requirements (`requirements.txt`)
-
