@@ -1,7 +1,7 @@
 # ================= IMPORTS ================= #
 import streamlit as st
 from PIL import Image
-import numpy as np
+import google.generativeai as genai
 import time
 
 # ================= PAGE CONFIG ================= #
@@ -10,6 +10,13 @@ st.set_page_config(
     page_icon="🍱",
     layout="wide"
 )
+
+# ================= GEMINI API ================= #
+GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
+
+genai.configure(api_key=GEMINI_API_KEY)
+
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 # ================= CUSTOM CSS ================= #
 st.markdown("""
@@ -130,7 +137,7 @@ elif menu == "AI Meal Scanner":
     )
 
     st.markdown(
-        '<div class="subtitle">Upload meal image and let AI analyze calories.</div>',
+        '<div class="subtitle">Upload meal image and let AI analyze food & calories.</div>',
         unsafe_allow_html=True
     )
 
@@ -162,58 +169,30 @@ elif menu == "AI Meal Scanner":
                     time.sleep(0.01)
                     progress.progress(i + 1)
 
-                # ================= DEMO AI DETECTION ================= #
-                detected_items = [
-                    "Pizza",
-                    "Burger",
-                    "French Fries"
-                ]
+                # ================= GEMINI AI ================= #
+                prompt = """
+                Analyze this food image.
+
+                Tell:
+                1. Food names
+                2. Estimated calories
+                3. Protein
+                4. Carbs
+                5. Fat
+                6. Health recommendation
+
+                Keep response short and clean.
+                """
+
+                response = model.generate_content(
+                    [prompt, image]
+                )
 
                 st.success("AI Scan Complete")
 
-                st.markdown("## 🍽️ Detected Foods")
+                st.markdown("## 🤖 AI Analysis")
 
-                for item in detected_items:
-                    st.write(f"✅ {item}")
-
-                # ================= CALORIE DATABASE ================= #
-                calorie_map = {
-                    "pizza": 300,
-                    "burger": 450,
-                    "banana": 120,
-                    "apple": 80,
-                    "sandwich": 250,
-                    "donut": 280,
-                    "fries": 350,
-                    "french fries": 350
-                }
-
-                total_calories = 0
-
-                for item in detected_items:
-                    total_calories += calorie_map.get(item.lower(), 150)
-
-                protein = round(total_calories * 0.05)
-                carbs = round(total_calories * 0.12)
-                fats = round(total_calories * 0.04)
-
-                st.markdown("## 📊 Nutrition Breakdown")
-
-                st.write(f"🔥 Calories: {total_calories} kcal")
-                st.write(f"🥩 Protein: {protein} g")
-                st.write(f"🍞 Carbs: {carbs} g")
-                st.write(f"🧈 Fats: {fats} g")
-
-                st.markdown("## 🤖 AI Recommendation")
-
-                if total_calories > 700:
-                    st.warning(
-                        "High calorie meal detected. Add more vegetables and protein."
-                    )
-                else:
-                    st.success(
-                        "Balanced meal detected. Great choice!"
-                    )
+                st.write(response.text)
 
             st.markdown('</div>', unsafe_allow_html=True)
 
